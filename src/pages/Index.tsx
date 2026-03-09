@@ -81,10 +81,12 @@ function DashboardContent() {
   );
 }
 
-const Index = () => (
-  <ProjectProvider>
-    <DashboardContent />
-  </ProjectProvider>
-);
+const Index = () => {
+  return (
+    <ProjectProvider>
+      <DashboardContent />
+    </ProjectProvider>
+  );
+};
 
 export default Index;
