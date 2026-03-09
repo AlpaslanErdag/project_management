@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { LayoutDashboard, Calendar, Users, Settings, FolderKanban, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { LayoutDashboard, Calendar, Users, Settings, FolderKanban, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
 
 interface AppSidebarProps {
   activeSection: string;
@@ -18,6 +18,14 @@ const navItems = [
 
 export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const { profile, isAdmin } = useAuth();
+
+  const initials = profile?.full_name
+    ?.split(" ")
+    .map(w => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase() ?? "?";
 
   return (
     <aside
@@ -65,11 +73,11 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
         <div className="p-3 border-t border-sidebar-border">
           <div className="flex items-center gap-3 px-2 py-2">
             <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium text-primary">
-              AY
+              {initials}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-sidebar-primary-foreground truncate">Ayşe Yılmaz</p>
-              <p className="text-[11px] text-sidebar-foreground/50">Product Manager</p>
+              <p className="text-xs font-medium text-sidebar-primary-foreground truncate">{profile?.full_name ?? "Kullanıcı"}</p>
+              <p className="text-[11px] text-sidebar-foreground/50">{isAdmin ? "Admin" : "Üye"}</p>
             </div>
           </div>
         </div>
