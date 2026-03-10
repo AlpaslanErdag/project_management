@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutDashboard, Calendar, Users, Settings, FolderKanban, ChevronLeft, ChevronRight } from "lucide-react";
+import { LayoutDashboard, Calendar, Users, Settings, FolderKanban, ChevronLeft, ChevronRight, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 
@@ -13,6 +13,7 @@ const navItems = [
   { id: "projects", label: "Projeler", icon: FolderKanban },
   { id: "calendar", label: "Takvim", icon: Calendar },
   { id: "team", label: "Ekip", icon: Users },
+  { id: "performance", label: "Performans", icon: TrendingUp, adminOnly: true },
   { id: "settings", label: "Ayarlar", icon: Settings },
 ];
 
@@ -52,7 +53,7 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
       </div>
 
       <nav className="flex-1 py-3 px-2 space-y-1">
-        {navItems.map(item => (
+        {navItems.filter(item => !item.adminOnly || isAdmin).map(item => (
           <button
             key={item.id}
             onClick={() => onSectionChange(item.id)}
