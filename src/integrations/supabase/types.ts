@@ -150,6 +150,41 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_reports: {
+        Row: {
+          created_at: string
+          id: string
+          report_data: Json | null
+          team_id: string
+          week_end: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          report_data?: Json | null
+          team_id: string
+          week_end: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          report_data?: Json | null
+          team_id?: string
+          week_end?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_reports_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
