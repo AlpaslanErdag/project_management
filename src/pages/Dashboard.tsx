@@ -9,6 +9,7 @@ import { TeamSection } from "@/components/TeamSection";
 import { SettingsSection } from "@/components/SettingsSection";
 import { ProjectsSection } from "@/components/ProjectsSection";
 import { PerformanceIndicator } from "@/components/PerformanceIndicator";
+import { WeeklyReportsSection } from "@/components/WeeklyReportsSection";
 import { TaskTable } from "@/components/TaskTable";
 import { NewTaskForm } from "@/components/NewTaskForm";
 import { Button } from "@/components/ui/button";
