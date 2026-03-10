@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutDashboard, Calendar, Users, Settings, FolderKanban, ChevronLeft, ChevronRight, TrendingUp } from "lucide-react";
+import { LayoutDashboard, Calendar, Users, Settings, FolderKanban, ChevronLeft, ChevronRight, TrendingUp, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 
