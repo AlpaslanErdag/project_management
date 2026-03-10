@@ -53,7 +53,7 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
       </div>
 
       <nav className="flex-1 py-3 px-2 space-y-1">
-        {navItems.map(item => (
+        {navItems.filter(item => !item.adminOnly || isAdmin).map(item => (
           <button
             key={item.id}
             onClick={() => onSectionChange(item.id)}
