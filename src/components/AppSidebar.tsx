@@ -14,6 +14,7 @@ const navItems = [
   { id: "calendar", label: "Takvim", icon: Calendar },
   { id: "team", label: "Ekip", icon: Users },
   { id: "performance", label: "Performans", icon: TrendingUp, adminOnly: true },
+  { id: "reports", label: "Haftalık Rapor", icon: FileText, adminOnly: true },
   { id: "settings", label: "Ayarlar", icon: Settings },
 ];
 

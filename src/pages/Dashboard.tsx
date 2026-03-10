@@ -74,6 +74,7 @@ export default function Dashboard() {
       case "calendar": return <CalendarSection />;
       case "team": return <TeamSection />;
       case "performance": return isAdmin ? <PerformanceIndicator /> : null;
+      case "reports": return isAdmin ? <WeeklyReportsSection /> : null;
       case "settings": return <SettingsSection />;
       default:
         return (
