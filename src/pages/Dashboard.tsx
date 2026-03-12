@@ -130,8 +130,9 @@ export default function Dashboard() {
               </p>
             </div>
 
-            {/* Tasks table */}
-            <div className="flex-1 overflow-auto px-4 md:px-6 pb-6">
+            {/* Stats + Tasks */}
+            <div className="flex-1 overflow-auto px-4 md:px-6 pb-6 space-y-6">
+              <DashboardStats isAdmin={isAdmin} />
               {isLoading ? (
                 <div className="flex items-center justify-center h-40 text-muted-foreground">Yükleniyor...</div>
               ) : filteredTasks.length === 0 ? (
