@@ -10,6 +10,7 @@ import { SettingsSection } from "@/components/SettingsSection";
 import { ProjectsSection } from "@/components/ProjectsSection";
 import { PerformanceIndicator } from "@/components/PerformanceIndicator";
 import { WeeklyReportsSection } from "@/components/WeeklyReportsSection";
+import { DashboardStats } from "@/components/DashboardStats";
 import { TaskTable } from "@/components/TaskTable";
 import { NewTaskForm } from "@/components/NewTaskForm";
 import { Button } from "@/components/ui/button";
@@ -129,8 +130,9 @@ export default function Dashboard() {
               </p>
             </div>
 
-            {/* Tasks table */}
-            <div className="flex-1 overflow-auto px-4 md:px-6 pb-6">
+            {/* Stats + Tasks */}
+            <div className="flex-1 overflow-auto px-4 md:px-6 pb-6 space-y-6">
+              <DashboardStats isAdmin={isAdmin} />
               {isLoading ? (
                 <div className="flex items-center justify-center h-40 text-muted-foreground">Yükleniyor...</div>
               ) : filteredTasks.length === 0 ? (
