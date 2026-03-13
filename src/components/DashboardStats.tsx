@@ -10,11 +10,16 @@ interface StatsCardProps {
   subtitle?: string;
   icon: React.ElementType;
   accent?: string;
+  onClick?: () => void;
+  active?: boolean;
 }
 
-function StatsCard({ title, value, subtitle, icon: Icon, accent = "text-primary" }: StatsCardProps) {
+function StatsCard({ title, value, subtitle, icon: Icon, accent = "text-primary", onClick, active }: StatsCardProps) {
   return (
-    <Card>
+    <Card
+      className={`cursor-pointer transition-all hover:shadow-md ${active ? "ring-2 ring-primary" : ""}`}
+      onClick={onClick}
+    >
       <CardContent className="p-4 flex items-start gap-3">
         <div className={`p-2 rounded-lg bg-secondary ${accent}`}>
           <Icon size={18} />
@@ -29,7 +34,7 @@ function StatsCard({ title, value, subtitle, icon: Icon, accent = "text-primary"
   );
 }
 
-function TeamKpiCard({ team, tasks }: { team: TeamRow; tasks: TaskRow[] }) {
+function TeamKpiCard({ team, tasks, onClick, active }: { team: TeamRow; tasks: TaskRow[]; onClick?: () => void; active?: boolean }) {
   const teamTasks = tasks.filter(t => t.team_id === team.id);
   const total = teamTasks.length;
   const completed = teamTasks.filter(t => t.status === "tamamlandi").length;
@@ -42,7 +47,10 @@ function TeamKpiCard({ team, tasks }: { team: TeamRow; tasks: TaskRow[] }) {
   const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   return (
-    <Card>
+    <Card
+      className={`cursor-pointer transition-all hover:shadow-md ${active ? "ring-2 ring-primary" : ""}`}
+      onClick={onClick}
+    >
       <CardHeader className="pb-2 pt-4 px-4">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: team.color ?? "hsl(var(--primary))" }} />
@@ -80,7 +88,18 @@ function TeamKpiCard({ team, tasks }: { team: TeamRow; tasks: TaskRow[] }) {
   );
 }
 
-export function DashboardStats({ isAdmin }: { isAdmin: boolean }) {
+export type DashboardFilter = {
+  type: "status" | "team" | "all";
+  value: string;
+};
+
+interface DashboardStatsProps {
+  isAdmin: boolean;
+  activeFilter?: DashboardFilter;
+  onFilterChange?: (filter: DashboardFilter) => void;
+}
+
+export function DashboardStats({ isAdmin, activeFilter, onFilterChange }: DashboardStatsProps) {
   const { tasks } = useTasks();
   const { data: teams } = useTeams();
 
@@ -93,17 +112,51 @@ export function DashboardStats({ isAdmin }: { isAdmin: boolean }) {
   }).length;
   const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
+  const handleCardClick = (filter: DashboardFilter) => {
+    if (activeFilter?.type === filter.type && activeFilter?.value === filter.value) {
+      onFilterChange?.({ type: "all", value: "all" });
+    } else {
+      onFilterChange?.(filter);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Global summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatsCard title="Toplam Görev" value={total} icon={ListTodo} />
-        <StatsCard title="Tamamlanan" value={completed} subtitle={`%${completionRate} oran`} icon={CheckCircle2} accent="text-emerald-500" />
-        <StatsCard title="Devam Eden" value={inProgress} icon={Clock} accent="text-blue-500" />
-        <StatsCard title="Gecikmiş" value={overdue} icon={AlertTriangle} accent="text-destructive" />
+        <StatsCard
+          title="Toplam Görev"
+          value={total}
+          icon={ListTodo}
+          onClick={() => handleCardClick({ type: "all", value: "all" })}
+          active={activeFilter?.type === "all"}
+        />
+        <StatsCard
+          title="Tamamlanan"
+          value={completed}
+          subtitle={`%${completionRate} oran`}
+          icon={CheckCircle2}
+          accent="text-emerald-500"
+          onClick={() => handleCardClick({ type: "status", value: "tamamlandi" })}
+          active={activeFilter?.type === "status" && activeFilter.value === "tamamlandi"}
+        />
+        <StatsCard
+          title="Devam Eden"
+          value={inProgress}
+          icon={Clock}
+          accent="text-blue-500"
+          onClick={() => handleCardClick({ type: "status", value: "devam_ediyor" })}
+          active={activeFilter?.type === "status" && activeFilter.value === "devam_ediyor"}
+        />
+        <StatsCard
+          title="Gecikmiş"
+          value={overdue}
+          icon={AlertTriangle}
+          accent="text-destructive"
+          onClick={() => handleCardClick({ type: "status", value: "overdue" })}
+          active={activeFilter?.type === "status" && activeFilter.value === "overdue"}
+        />
       </div>
 
-      {/* Per-team KPI (admin only) */}
       {isAdmin && teams && teams.length > 0 && (
         <div>
           <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
@@ -111,7 +164,13 @@ export function DashboardStats({ isAdmin }: { isAdmin: boolean }) {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
             {teams.map(team => (
-              <TeamKpiCard key={team.id} team={team} tasks={tasks} />
+              <TeamKpiCard
+                key={team.id}
+                team={team}
+                tasks={tasks}
+                onClick={() => handleCardClick({ type: "team", value: team.id })}
+                active={activeFilter?.type === "team" && activeFilter.value === team.id}
+              />
             ))}
           </div>
         </div>

@@ -8,10 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Mail, Trash2, Shield, ShieldCheck, Users } from "lucide-react";
+import { Trash2, Shield, ShieldCheck, Mail, Pencil, Check, X } from "lucide-react";
 
 type ProfileRow = {
   id: string;
@@ -29,6 +27,55 @@ type UserRoleRow = {
   user_id: string;
   role: "admin" | "member";
 };
+
+function EditableTeamName({ teamId, currentName }: { teamId: string; currentName: string }) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(currentName);
+  const queryClient = useQueryClient();
+
+  const save = async () => {
+    if (!name.trim() || name.trim() === currentName) {
+      setName(currentName);
+      setEditing(false);
+      return;
+    }
+    const { error } = await supabase.from("teams").update({ name: name.trim() }).eq("id", teamId);
+    if (error) {
+      toast({ title: "Hata", description: "Takım adı güncellenemedi.", variant: "destructive" });
+      setName(currentName);
+    } else {
+      toast({ title: "Başarılı", description: "Takım adı güncellendi." });
+      queryClient.invalidateQueries({ queryKey: ["teams"] });
+    }
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1">
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="h-6 text-[10px] w-24 px-1"
+          autoFocus
+          onKeyDown={(e) => {
+            if (e.key === "Enter") save();
+            if (e.key === "Escape") { setName(currentName); setEditing(false); }
+          }}
+        />
+        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={save}><Check size={10} /></Button>
+        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => { setName(currentName); setEditing(false); }}><X size={10} /></Button>
+      </div>
+    );
+  }
+
+  return (
+    <Badge variant="outline" className="text-[10px] cursor-pointer gap-1 hover:bg-secondary" onClick={() => setEditing(true)}>
+      {currentName}
+      <Pencil size={8} />
+    </Badge>
+  );
+}
 
 export function TeamSection() {
   const { isAdmin } = useAuth();
@@ -58,10 +105,7 @@ export function TeamSection() {
   const toggleRole = useMutation({
     mutationFn: async ({ userId, currentRole }: { userId: string; currentRole: string }) => {
       const newRole = currentRole === "admin" ? "member" : "admin";
-      const { error } = await supabase
-        .from("user_roles")
-        .update({ role: newRole })
-        .eq("user_id", userId);
+      const { error } = await supabase.from("user_roles").update({ role: newRole }).eq("user_id", userId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -72,7 +116,6 @@ export function TeamSection() {
 
   const removeUser = useMutation({
     mutationFn: async (userId: string) => {
-      // Remove profile (cascade will handle roles)
       const { error } = await supabase.from("profiles").delete().eq("user_id", userId);
       if (error) throw error;
     },
@@ -90,9 +133,7 @@ export function TeamSection() {
     teams?.find((t) => t.id === teamId)?.name ?? "—";
 
   const getMemberStats = (userId: string, teamId: string | null) => {
-    const memberTasks = tasks.filter(
-      (t) => t.team_id === teamId
-    );
+    const memberTasks = tasks.filter((t) => t.team_id === teamId);
     return {
       total: memberTasks.length,
       done: memberTasks.filter((t) => t.status === "tamamlandi").length,
@@ -101,21 +142,14 @@ export function TeamSection() {
   };
 
   const initials = (name: string) =>
-    name
-      .split(" ")
-      .map((w) => w[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase();
+    name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 
   return (
     <div className="flex-1 overflow-auto px-4 md:px-6 py-6">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold">Ekip</h1>
-          <p className="text-sm text-muted-foreground">
-            {profiles?.length ?? 0} ekip üyesi
-          </p>
+          <p className="text-sm text-muted-foreground">{profiles?.length ?? 0} ekip üyesi</p>
         </div>
       </div>
 
@@ -132,9 +166,7 @@ export function TeamSection() {
                       {initials(member.full_name)}
                     </div>
                     <div>
-                      <CardTitle className="text-sm font-semibold">
-                        {member.full_name}
-                      </CardTitle>
+                      <CardTitle className="text-sm font-semibold">{member.full_name}</CardTitle>
                       <div className="flex items-center gap-1.5 mt-1">
                         <Badge
                           variant="outline"
@@ -146,36 +178,23 @@ export function TeamSection() {
                         >
                           {role === "admin" ? "Admin" : "Üye"}
                         </Badge>
-                        <Badge variant="outline" className="text-[10px]">
-                          {getTeamName(member.team_id)}
-                        </Badge>
+                        {isAdmin && member.team_id ? (
+                          <EditableTeamName teamId={member.team_id} currentName={getTeamName(member.team_id)} />
+                        ) : (
+                          <Badge variant="outline" className="text-[10px]">{getTeamName(member.team_id)}</Badge>
+                        )}
                       </div>
                     </div>
                   </div>
                   {isAdmin && (
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
+                      <Button variant="ghost" size="icon" className="h-7 w-7"
                         title={role === "admin" ? "Üye yap" : "Admin yap"}
-                        onClick={() =>
-                          toggleRole.mutate({
-                            userId: member.user_id,
-                            currentRole: role,
-                          })
-                        }
+                        onClick={() => toggleRole.mutate({ userId: member.user_id, currentRole: role })}
                       >
-                        {role === "admin" ? (
-                          <ShieldCheck size={14} className="text-amber-500" />
-                        ) : (
-                          <Shield size={14} />
-                        )}
+                        {role === "admin" ? <ShieldCheck size={14} className="text-amber-500" /> : <Shield size={14} />}
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-destructive"
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"
                         title="Kullanıcıyı kaldır"
                         onClick={() => removeUser.mutate(member.user_id)}
                       >
