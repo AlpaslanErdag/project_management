@@ -55,6 +55,36 @@ export type Database = {
           },
         ]
       }
+      reminders: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          is_read: boolean
+          message: string
+          target_id: string
+          target_type: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          is_read?: boolean
+          message: string
+          target_id: string
+          target_type: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          target_id?: string
+          target_type?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           assigned_personnel: string | null
