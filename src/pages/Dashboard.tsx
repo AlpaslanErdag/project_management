@@ -10,9 +10,11 @@ import { SettingsSection } from "@/components/SettingsSection";
 import { ProjectsSection } from "@/components/ProjectsSection";
 import { PerformanceIndicator } from "@/components/PerformanceIndicator";
 import { WeeklyReportsSection } from "@/components/WeeklyReportsSection";
-import { DashboardStats } from "@/components/DashboardStats";
+import { DashboardStats, type DashboardFilter } from "@/components/DashboardStats";
 import { TaskTable } from "@/components/TaskTable";
 import { NewTaskForm } from "@/components/NewTaskForm";
+import { ReminderDialog } from "@/components/ReminderDialog";
+import { RemindersPopover } from "@/components/RemindersPopover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -20,7 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "@/hooks/use-toast";
 import { exportTasksToExcel, parseExcelFile } from "@/lib/excel";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Download, Upload, Search, Bell, LogOut } from "lucide-react";
+import { Plus, Download, Upload, Search, LogOut, Send } from "lucide-react";
 
 export default function Dashboard() {
   const { profile, isAdmin, signOut } = useAuth();
@@ -28,14 +30,27 @@ export default function Dashboard() {
   const { data: teams } = useTeams();
   const [activeSection, setActiveSection] = useState("dashboard");
   const [newTaskOpen, setNewTaskOpen] = useState(false);
+  const [reminderOpen, setReminderOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<TaskRow | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [dashboardFilter, setDashboardFilter] = useState<DashboardFilter>({ type: "all", value: "all" });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filteredTasks = tasks.filter(t => {
     if (searchQuery && !t.project_or_request.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     if (filterStatus !== "all" && t.status !== filterStatus) return false;
+
+    // Dashboard card filters
+    if (dashboardFilter.type === "status") {
+      if (dashboardFilter.value === "overdue") {
+        if (t.status === "tamamlandi" || !t.estimated_completion) return false;
+        return new Date(t.estimated_completion) < new Date();
+      }
+      if (t.status !== dashboardFilter.value) return false;
+    }
+    if (dashboardFilter.type === "team" && t.team_id !== dashboardFilter.value) return false;
+
     return true;
   });
 
@@ -69,6 +84,22 @@ export default function Dashboard() {
     e.target.value = "";
   };
 
+  const activeFilterLabel = (() => {
+    if (dashboardFilter.type === "all") return null;
+    if (dashboardFilter.type === "status") {
+      const labels: Record<string, string> = {
+        tamamlandi: "Tamamlanan",
+        devam_ediyor: "Devam Eden",
+        overdue: "Gecikmiş",
+      };
+      return labels[dashboardFilter.value] ?? dashboardFilter.value;
+    }
+    if (dashboardFilter.type === "team") {
+      return teams?.find(t => t.id === dashboardFilter.value)?.name ?? "Takım";
+    }
+    return null;
+  })();
+
   const renderSection = () => {
     switch (activeSection) {
       case "projects": return <ProjectsSection />;
@@ -80,7 +111,6 @@ export default function Dashboard() {
       default:
         return (
           <div className="flex-1 overflow-hidden flex flex-col">
-            {/* Header bar */}
             <header className="h-14 border-b bg-card flex items-center justify-between px-4 md:px-6 shrink-0">
               <div className="relative w-full max-w-sm">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -111,6 +141,12 @@ export default function Dashboard() {
                   <Upload size={14} /> İçe Aktar
                 </Button>
                 <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImport} />
+                {isAdmin && (
+                  <Button variant="outline" size="sm" onClick={() => setReminderOpen(true)} className="gap-1.5">
+                    <Send size={14} /> Hatırlatma
+                  </Button>
+                )}
+                <RemindersPopover />
                 <Button size="sm" onClick={() => setNewTaskOpen(true)} className="gap-1.5">
                   <Plus size={14} /> Yeni Görev
                 </Button>
@@ -120,7 +156,6 @@ export default function Dashboard() {
               </div>
             </header>
 
-            {/* Title */}
             <div className="px-4 md:px-6 pt-4 pb-3 shrink-0">
               <h1 className="text-xl font-bold">
                 {isAdmin ? "Tüm Takımlar - Görev Takibi" : `${teams?.find(t => t.id === profile?.team_id)?.name ?? "Takım"} - Görev Takibi`}
@@ -130,9 +165,20 @@ export default function Dashboard() {
               </p>
             </div>
 
-            {/* Stats + Tasks */}
             <div className="flex-1 overflow-auto px-4 md:px-6 pb-6 space-y-6">
-              <DashboardStats isAdmin={isAdmin} />
+              <DashboardStats isAdmin={isAdmin} activeFilter={dashboardFilter} onFilterChange={setDashboardFilter} />
+
+              {activeFilterLabel && (
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-muted-foreground">Filtre:</span>
+                  <span className="font-medium text-primary">{activeFilterLabel}</span>
+                  <span className="text-muted-foreground">({filteredTasks.length} görev)</span>
+                  <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => setDashboardFilter({ type: "all", value: "all" })}>
+                    Temizle
+                  </Button>
+                </div>
+              )}
+
               {isLoading ? (
                 <div className="flex items-center justify-center h-40 text-muted-foreground">Yükleniyor...</div>
               ) : filteredTasks.length === 0 ? (
@@ -158,7 +204,6 @@ export default function Dashboard() {
         {renderSection()}
       </div>
 
-      {/* New Task Dialog */}
       <Dialog open={newTaskOpen} onOpenChange={setNewTaskOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -176,7 +221,8 @@ export default function Dashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Task Detail */}
+      <ReminderDialog open={reminderOpen} onOpenChange={setReminderOpen} />
+
       {selectedTask && (
         <TaskDetailDrawer task={selectedTask} onClose={() => setSelectedTask(null)} />
       )}
