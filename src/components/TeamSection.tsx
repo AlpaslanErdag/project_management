@@ -8,8 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
-import { Trash2, Shield, ShieldCheck, Mail, Pencil, Check, X } from "lucide-react";
+import { Trash2, Shield, ShieldCheck, Mail, Pencil, Check, X, Plus, UserPlus, Users } from "lucide-react";
 
 type ProfileRow = {
   id: string;
@@ -77,11 +80,213 @@ function EditableTeamName({ teamId, currentName }: { teamId: string; currentName
   );
 }
 
+function TeamManagementSection() {
+  const { data: teams } = useTeams();
+  const queryClient = useQueryClient();
+  const [newTeamName, setNewTeamName] = useState("");
+  const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
+
+  const createTeam = useMutation({
+    mutationFn: async (name: string) => {
+      const { error } = await supabase.from("teams").insert({ name });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["teams"] });
+      setNewTeamName("");
+      toast({ title: "Başarılı", description: "Yeni takım oluşturuldu." });
+    },
+    onError: () => toast({ title: "Hata", description: "Takım oluşturulamadı.", variant: "destructive" }),
+  });
+
+  const renameTeam = useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const { error } = await supabase.from("teams").update({ name }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["teams"] });
+      setEditingTeamId(null);
+      toast({ title: "Başarılı", description: "Takım adı güncellendi." });
+    },
+  });
+
+  const deleteTeam = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("teams").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["teams"] });
+      toast({ title: "Başarılı", description: "Takım silindi." });
+    },
+    onError: () => toast({ title: "Hata", description: "Takım silinemedi. Takıma bağlı kullanıcılar veya görevler olabilir.", variant: "destructive" }),
+  });
+
+  return (
+    <Card className="mb-6">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-semibold flex items-center gap-2">
+          <Users size={16} /> Takım Yönetimi
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex gap-2">
+          <Input
+            placeholder="Yeni takım adı"
+            value={newTeamName}
+            onChange={(e) => setNewTeamName(e.target.value)}
+            className="h-8 text-sm"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && newTeamName.trim()) createTeam.mutate(newTeamName.trim());
+            }}
+          />
+          <Button size="sm" className="h-8 gap-1" onClick={() => newTeamName.trim() && createTeam.mutate(newTeamName.trim())} disabled={!newTeamName.trim()}>
+            <Plus size={14} /> Ekle
+          </Button>
+        </div>
+        <div className="space-y-1">
+          {teams?.map((team) => (
+            <div key={team.id} className="flex items-center justify-between p-2 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors">
+              {editingTeamId === team.id ? (
+                <div className="flex items-center gap-1 flex-1">
+                  <Input
+                    value={editingName}
+                    onChange={(e) => setEditingName(e.target.value)}
+                    className="h-7 text-sm flex-1"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && editingName.trim()) renameTeam.mutate({ id: team.id, name: editingName.trim() });
+                      if (e.key === "Escape") setEditingTeamId(null);
+                    }}
+                  />
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => editingName.trim() && renameTeam.mutate({ id: team.id, name: editingName.trim() })}>
+                    <Check size={14} />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingTeamId(null)}>
+                    <X size={14} />
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <span className="text-sm font-medium">{team.name}</span>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingTeamId(team.id); setEditingName(team.name); }}>
+                      <Pencil size={14} />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive">
+                          <Trash2 size={14} />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Takımı Sil</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            "{team.name}" takımını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz. Takıma bağlı kullanıcılar ve görevler varsa silme işlemi başarısız olabilir.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>İptal</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteTeam.mutate(team.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Sil
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function CreateUserDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [teamId, setTeamId] = useState("");
+  const [role, setRole] = useState<"admin" | "member">("member");
+  const [submitting, setSubmitting] = useState(false);
+  const { data: teams } = useTeams();
+  const queryClient = useQueryClient();
+
+  const handleCreate = async () => {
+    if (!email || !password || !fullName || !teamId) {
+      toast({ title: "Hata", description: "Tüm alanları doldurun.", variant: "destructive" });
+      return;
+    }
+    setSubmitting(true);
+    try {
+      // Use edge function to create user as admin
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke("admin-create-user", {
+        body: { email, password, fullName, teamId, role },
+      });
+      if (res.error) throw new Error(res.error.message);
+      if (res.data?.error) throw new Error(res.data.error);
+      
+      queryClient.invalidateQueries({ queryKey: ["profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["all-user-roles"] });
+      toast({ title: "Başarılı", description: `${fullName} kullanıcısı oluşturuldu.` });
+      onOpenChange(false);
+      setEmail(""); setPassword(""); setFullName(""); setTeamId(""); setRole("member");
+    } catch (err: any) {
+      toast({ title: "Hata", description: err.message || "Kullanıcı oluşturulamadı.", variant: "destructive" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Yeni Kullanıcı Oluştur</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <Input placeholder="Ad Soyad" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+          <Input type="email" placeholder="E-posta" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input type="password" placeholder="Şifre (min 6 karakter)" value={password} onChange={(e) => setPassword(e.target.value)} minLength={6} />
+          <Select value={teamId} onValueChange={setTeamId}>
+            <SelectTrigger><SelectValue placeholder="Takım seçin" /></SelectTrigger>
+            <SelectContent>
+              {teams?.map((t) => (
+                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={role} onValueChange={(v) => setRole(v as "admin" | "member")}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="member">Üye</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>İptal</Button>
+          <Button onClick={handleCreate} disabled={submitting}>
+            {submitting ? "Oluşturuluyor..." : "Oluştur"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function TeamSection() {
   const { isAdmin } = useAuth();
   const { tasks } = useTasks();
   const { data: teams } = useTeams();
   const queryClient = useQueryClient();
+  const [showCreateUser, setShowCreateUser] = useState(false);
 
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
@@ -151,7 +356,16 @@ export function TeamSection() {
           <h1 className="text-xl font-bold">Ekip</h1>
           <p className="text-sm text-muted-foreground">{profiles?.length ?? 0} ekip üyesi</p>
         </div>
+        {isAdmin && (
+          <Button size="sm" className="gap-1" onClick={() => setShowCreateUser(true)}>
+            <UserPlus size={16} /> Kullanıcı Ekle
+          </Button>
+        )}
       </div>
+
+      {isAdmin && <TeamManagementSection />}
+
+      {isAdmin && <CreateUserDialog open={showCreateUser} onOpenChange={setShowCreateUser} />}
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {profiles?.map((member) => {
