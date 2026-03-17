@@ -2,17 +2,20 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTasks } from "@/hooks/useTasks";
 import { useTeams } from "@/hooks/useTeams";
+import { useDailyReportRequests, useDailyReportActions } from "@/hooks/useDailyReportRequests";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
-import { Trash2, Shield, ShieldCheck, Mail, Pencil, Check, X, Plus, UserPlus, Users } from "lucide-react";
+import { Trash2, Shield, ShieldCheck, Mail, Pencil, Check, X, Plus, UserPlus, Users, Bell } from "lucide-react";
 
 type ProfileRow = {
   id: string;
@@ -282,11 +285,13 @@ function CreateUserDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
 }
 
 export function TeamSection() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, profile: currentProfile } = useAuth();
   const { tasks } = useTasks();
   const { data: teams } = useTeams();
   const queryClient = useQueryClient();
   const [showCreateUser, setShowCreateUser] = useState(false);
+  const { data: dailyReportRequests } = useDailyReportRequests();
+  const { toggleRequest } = useDailyReportActions();
 
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
@@ -306,6 +311,11 @@ export function TeamSection() {
     },
     enabled: isAdmin,
   });
+
+  const getDailyReportStatus = (userId: string) => {
+    const req = dailyReportRequests?.find((r) => r.user_id === userId);
+    return { isActive: req?.is_active ?? false, existingId: req?.id };
+  };
 
   const toggleRole = useMutation({
     mutationFn: async ({ userId, currentRole }: { userId: string; currentRole: string }) => {
@@ -425,6 +435,40 @@ export function TeamSection() {
                     <span>{member.email}</span>
                   </div>
                 )}
+                {isAdmin && (() => {
+                  const drs = getDailyReportStatus(member.user_id);
+                  return (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <Bell size={12} className="text-muted-foreground" />
+                        <span className="text-muted-foreground">Günlük Bildirim</span>
+                      </div>
+                      <Switch
+                        checked={drs.isActive}
+                        onCheckedChange={() =>
+                          toggleRequest.mutate({
+                            userId: member.user_id,
+                            requestedBy: currentProfile?.user_id ?? "",
+                            currentlyActive: drs.isActive,
+                            existingId: drs.existingId,
+                          })
+                        }
+                      />
+                    </div>
+                  );
+                })()}
+                {!isAdmin && (() => {
+                  const drs = getDailyReportStatus(member.user_id);
+                  if (member.user_id === currentProfile?.user_id && drs.isActive) {
+                    return (
+                      <div className="flex items-center gap-1.5 text-xs text-amber-600">
+                        <Bell size={12} />
+                        <span>Admin sizden günlük bildirim bekliyor</span>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
                 <div className="grid grid-cols-3 gap-2 pt-1">
                   <div className="flex flex-col items-center p-2 rounded-lg bg-secondary/50">
                     <span className="text-sm font-semibold">{stats.done}</span>

@@ -14,6 +14,104 @@ export type Database = {
   }
   public: {
     Tables: {
+      daily_report_requests: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          requested_by: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          requested_by: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          requested_by?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      leave_periods: {
+        Row: {
+          created_at: string
+          created_by: string
+          end_date: string
+          id: string
+          is_active: boolean
+          name: string
+          start_date: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          end_date: string
+          id?: string
+          is_active?: boolean
+          name: string
+          start_date: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          end_date?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          start_date?: string
+        }
+        Relationships: []
+      }
+      leave_requests: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          leave_period_id: string
+          note: string | null
+          start_date: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          leave_period_id: string
+          note?: string | null
+          start_date: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          leave_period_id?: string
+          note?: string | null
+          start_date?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_requests_leave_period_id_fkey"
+            columns: ["leave_period_id"]
+            isOneToOne: false
+            referencedRelation: "leave_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutDashboard, Calendar, Users, Settings, FolderKanban, ChevronLeft, ChevronRight, TrendingUp, FileText } from "lucide-react";
+import { LayoutDashboard, Calendar, Users, Settings, FolderKanban, ChevronLeft, ChevronRight, TrendingUp, FileText, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 
@@ -13,6 +13,7 @@ const navItems = [
   { id: "projects", label: "Projeler", icon: FolderKanban },
   { id: "calendar", label: "Takvim", icon: Calendar },
   { id: "team", label: "Ekip", icon: Users },
+  { id: "leave", label: "İzin Yönetimi", icon: CalendarDays },
   { id: "performance", label: "Performans", icon: TrendingUp, adminOnly: true },
   { id: "reports", label: "Haftalık Rapor", icon: FileText, adminOnly: true },
   { id: "settings", label: "Ayarlar", icon: Settings },
