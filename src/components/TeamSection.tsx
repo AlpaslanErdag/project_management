@@ -2,17 +2,20 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTasks } from "@/hooks/useTasks";
 import { useTeams } from "@/hooks/useTeams";
+import { useDailyReportRequests, useDailyReportActions } from "@/hooks/useDailyReportRequests";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
-import { Trash2, Shield, ShieldCheck, Mail, Pencil, Check, X, Plus, UserPlus, Users } from "lucide-react";
+import { Trash2, Shield, ShieldCheck, Mail, Pencil, Check, X, Plus, UserPlus, Users, Bell } from "lucide-react";
 
 type ProfileRow = {
   id: string;
