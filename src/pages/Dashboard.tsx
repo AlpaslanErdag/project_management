@@ -169,6 +169,7 @@ export default function Dashboard() {
             </div>
 
             <div className="flex-1 overflow-auto px-4 md:px-6 pb-6 space-y-6">
+              <DailyReportAlert />
               <DashboardStats isAdmin={isAdmin} activeFilter={dashboardFilter} onFilterChange={setDashboardFilter} />
 
               {activeFilterLabel && (
