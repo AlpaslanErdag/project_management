@@ -7,6 +7,7 @@ import { TaskDetailDrawer } from "@/components/TaskDetailDrawer";
 import { CalendarSection } from "@/components/CalendarSection";
 import { TeamSection } from "@/components/TeamSection";
 import { SettingsSection } from "@/components/SettingsSection";
+import { LeaveSection } from "@/components/LeaveSection";
 import { ProjectsSection } from "@/components/ProjectsSection";
 import { PerformanceIndicator } from "@/components/PerformanceIndicator";
 import { WeeklyReportsSection } from "@/components/WeeklyReportsSection";
