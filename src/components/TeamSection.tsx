@@ -285,11 +285,13 @@ function CreateUserDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
 }
 
 export function TeamSection() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, profile: currentProfile } = useAuth();
   const { tasks } = useTasks();
   const { data: teams } = useTeams();
   const queryClient = useQueryClient();
   const [showCreateUser, setShowCreateUser] = useState(false);
+  const { data: dailyReportRequests } = useDailyReportRequests();
+  const { toggleRequest } = useDailyReportActions();
 
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
@@ -309,6 +311,11 @@ export function TeamSection() {
     },
     enabled: isAdmin,
   });
+
+  const getDailyReportStatus = (userId: string) => {
+    const req = dailyReportRequests?.find((r) => r.user_id === userId);
+    return { isActive: req?.is_active ?? false, existingId: req?.id };
+  };
 
   const toggleRole = useMutation({
     mutationFn: async ({ userId, currentRole }: { userId: string; currentRole: string }) => {
