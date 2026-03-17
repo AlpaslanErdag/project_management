@@ -13,6 +13,7 @@ const navItems = [
   { id: "projects", label: "Projeler", icon: FolderKanban },
   { id: "calendar", label: "Takvim", icon: Calendar },
   { id: "team", label: "Ekip", icon: Users },
+  { id: "leave", label: "İzin Yönetimi", icon: CalendarDays },
   { id: "performance", label: "Performans", icon: TrendingUp, adminOnly: true },
   { id: "reports", label: "Haftalık Rapor", icon: FileText, adminOnly: true },
   { id: "settings", label: "Ayarlar", icon: Settings },
