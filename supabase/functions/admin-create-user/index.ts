@@ -13,10 +13,13 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
     // Verify caller is admin
-    const authHeader = req.headers.get("Authorization")!;
-    const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!);
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) throw new Error("Unauthorized");
+
+    const anonClient = createClient(supabaseUrl, anonKey);
     const { data: { user: caller } } = await anonClient.auth.getUser(authHeader.replace("Bearer ", ""));
     if (!caller) throw new Error("Unauthorized");
 
